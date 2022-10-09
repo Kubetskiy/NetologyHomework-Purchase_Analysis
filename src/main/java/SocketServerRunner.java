@@ -12,18 +12,17 @@ public class SocketServerRunner implements Runnable {
              var inputStream = new DataInputStream(socket.getInputStream())) {
             String response;
             while (true) {
-/*
                 // Принимаем запрос
                 var request = inputStream.readUTF(); // {"title": "булка", "date": "2022.02.08", "sum": 200}
                 // Отправляем на обработку
                 DataHandler.getInstance().addSale(request);
                 // Запрашиваем результат и отправляем его клиенту
-*/
                 response = DataHandler.getInstance().generateAnalysisResults();
                 outputStream.writeUTF(response);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.out.println("Не могу стартовать сервер");
+            e.printStackTrace();
         }
     }
 }

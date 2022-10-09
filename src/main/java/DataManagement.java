@@ -5,14 +5,10 @@ import java.util.Scanner;
 
 public class DataManagement {
 
-
     /**
      * loadCategories() - формирование мапы категорий из файла categories.tsv
      */
     static Map<String, String> loadCategories() throws IOException {
-
-//        Map<String, String> ctgs = Map.of("булка", "еда", "курица", "еда");
-
         var file = new File("categories.tsv");
         Map<String, String> goodsByCategory = new HashMap<>();
         try (var fis = new FileInputStream(file)) {
@@ -22,22 +18,27 @@ public class DataManagement {
                 var productAndCategory = s.split("\t");
                 goodsByCategory.put(productAndCategory[0], productAndCategory[1]);
             }
-//            goodsByCategory.put("сарделька", "еда");
         }
         return goodsByCategory;
-/*
-        var outFile = new File("TEST.txt");
-        try (var writer = new FileWriter(outFile)) {
-            for (Map.Entry<String, String> ent : goodsByCategory.entrySet()) {
-                writer.write(ent.getKey()+" "+ent.getValue()+"\n");
-            }
-*/
-/*
-            for (Map.Entry<String, String> entry : ctgs.entrySet()) {
-                writer.write(entry.getKey()+" "+entry.getValue()+"\n");
+    }
+
+    public static void saveDataToBinFile(Map<String, Integer> salesByCategory) throws IOException {
+        File file = new File("data.bin");
+        try (var fos = new FileOutputStream(file);
+             var oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(salesByCategory);
+        }
+    }
+
+    public static Map<String, Integer> loadDataFromBinFile() throws IOException, ClassNotFoundException {
+        File file = new File("data.bin");
+        if (file.exists()) {
+            try (var fis = new FileInputStream(file);
+                 var ois = new ObjectInputStream(fis)) {
+                return (Map<String, Integer>) ois.readObject();
             }
         }
-*/
-//        return goodsByCategory;
+        HashMap<String, Integer> map = new HashMap<>();
+        return map;
     }
 }
