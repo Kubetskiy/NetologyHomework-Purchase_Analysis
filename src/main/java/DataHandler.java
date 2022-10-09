@@ -14,35 +14,34 @@ public class DataHandler {
     static {
         try {
             INSTANCE = new DataHandler();
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
+    //  Справочник соответствия категорий товарам
+    private final Map<String, String> goodsByCategory;
     //  Продажи по категориям товаров
-    private static final Map<String, Integer> salesByCategory = new HashMap<>();
-    //  Соответствие категорий товарам
-    private Map<String, String> goodsByCategory = new HashMap<>();
+    private final Map<String, Integer> salesByCategory;
 
-
-    private DataHandler() throws IOException {
+    // Конструктор и инициализация данных
+    private DataHandler() throws IOException, ClassNotFoundException {
         // Загрузка справочников товаров и категорий
-        setGoodsByCategory(DataManagement.loadCategories());
+        this.goodsByCategory = DataManagement.loadCategories();
+        this.salesByCategory = DataManagement.loadDataFromBinFile();
     }
+
     // Вместо конструктора
     public static DataHandler getInstance() throws IOException {
-//        goodsByCategory = DataLoad.loadCategories();
         return INSTANCE;
     }
 
-    public void setGoodsByCategory(Map<String, String> goodsByCategory) {
-        this.goodsByCategory = goodsByCategory;
-    }
-
     /**
+     * Получаем запись о продаже и добавляем к данным
+     *
      * @param newSaleForAdd Строка формата JSON ({"title": "булка", "date": "2022.02.08", "sum": 200})
      */
-    public void addSale(String newSaleForAdd) {
+    public void addSale(String newSaleForAdd) throws IOException {
         var gson = new Gson();
         // Распихиваем строку JSON в JAVA объект
         var salesRecord = gson.fromJson(newSaleForAdd, SalesRecord.class);
@@ -54,6 +53,8 @@ public class DataHandler {
         // Плюсуем продажи
         int currentSales = salesByCategory.getOrDefault(category, 0);
         salesByCategory.put(category, currentSales + salesRecord.sum);
+        // Сохраняем данные
+        DataManagement.saveDataToBinFile(salesByCategory);
     }
 
     /**
@@ -79,12 +80,14 @@ public class DataHandler {
         }
         return key;
     }
+
     // Вспомогательный класс для получения записей о продажах
     private class SalesRecord {
         String title;
         String date;
         int sum;
     }
+
     // Вспомогательные классы для вывода результатов в JSON
     private class AnalysisResult {
         SalesData maxCategory;
@@ -93,6 +96,7 @@ public class DataHandler {
             this.maxCategory = salesData;
         }
     }
+
     private class SalesData {
         String category;
         int sum;
