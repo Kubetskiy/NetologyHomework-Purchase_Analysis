@@ -4,18 +4,30 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-// TODO Переделать инициализацию и вызов загрузчика.
+/**
+ * Данная реализация использует явную автоматическую инициализацию МАПы продукт - категория
+ * путем вызова процедуры загрузки МАПы в конструкторе.
+ */
 public class DataHandler {
-    private static final DataHandler INSTANCE = new DataHandler();
+    private static final DataHandler INSTANCE;
+
+    static {
+        try {
+            INSTANCE = new DataHandler();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     //  Продажи по категориям товаров
     private static final Map<String, Integer> salesByCategory = new HashMap<>();
     //  Соответствие категорий товарам
     private Map<String, String> goodsByCategory = new HashMap<>();
 
 
-    private DataHandler() {
+    private DataHandler() throws IOException {
         // Загрузка справочников товаров и категорий
-//        DataLoad.loadCategories(goodsByCategory, salesByCategory);
+        setGoodsByCategory(DataManagement.loadCategories());
     }
     // Вместо конструктора
     public static DataHandler getInstance() throws IOException {
