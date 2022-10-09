@@ -3,7 +3,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-public class DataLoad {
+public class DataManagement {
 
 
     /**
@@ -22,19 +22,22 @@ public class DataLoad {
                 var productAndCategory = s.split("\t");
                 goodsByCategory.put(productAndCategory[0], productAndCategory[1]);
             }
+//            goodsByCategory.put("сарделька", "еда");
         }
-//        return goodsByCategory;
+        return goodsByCategory;
 /*
         var outFile = new File("TEST.txt");
         try (var writer = new FileWriter(outFile)) {
             for (Map.Entry<String, String> ent : goodsByCategory.entrySet()) {
                 writer.write(ent.getKey()+" "+ent.getValue()+"\n");
             }
+*/
+/*
             for (Map.Entry<String, String> entry : ctgs.entrySet()) {
                 writer.write(entry.getKey()+" "+entry.getValue()+"\n");
             }
         }
 */
-        return goodsByCategory;
+//        return goodsByCategory;
     }
 }
