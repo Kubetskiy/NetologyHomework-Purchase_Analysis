@@ -22,23 +22,27 @@ public class DataManagement {
         return goodsByCategory;
     }
 
-    public static void saveDataToBinFile(Map<String, Integer> salesByCategory) throws IOException {
+    public static void saveAllDataToBinFile(DataHandler.AllSalesData allSalesData) throws IOException {
         File file = new File("data.bin");
         try (var fos = new FileOutputStream(file);
              var oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(salesByCategory);
+            oos.writeObject(allSalesData);
         }
     }
-
-    public static Map<String, Integer> loadDataFromBinFile() throws IOException, ClassNotFoundException {
+    // Загружаем или создаем структуру данных
+    public static DataHandler.AllSalesData loadAllDataFromBinFile() throws IOException, ClassNotFoundException {
         File file = new File("data.bin");
         if (file.exists()) {
             try (var fis = new FileInputStream(file);
                  var ois = new ObjectInputStream(fis)) {
-                return (Map<String, Integer>) ois.readObject();
+                return (DataHandler.AllSalesData) ois.readObject();
             }
         }
-        HashMap<String, Integer> map = new HashMap<>();
-        return map;
+        DataHandler.AllSalesData data = new DataHandler.AllSalesData();
+        data.maxCategory = new HashMap<>();
+        data.yearlySales = new HashMap<>();
+        data.monthlySales = new HashMap<>();
+        data.dailySales = new HashMap<>();
+        return data;
     }
 }
