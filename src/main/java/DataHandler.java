@@ -1,6 +1,8 @@
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,6 +12,8 @@ import java.util.Map;
  */
 public class DataHandler {
     private static final DataHandler INSTANCE;
+    // Чтобы знать, за какую дату возвращать отчет
+    private String lastSaleDate;
 
     static {
         try {
@@ -21,17 +25,18 @@ public class DataHandler {
 
     //  Справочник соответствия категорий товарам
     private final Map<String, String> goodsByCategory;
-    //  Продажи по категориям товаров
-    private final Map<String, Integer> salesByCategory;
+    //  Продажи по категориям товаров общие, по годам, месяцам и дням
+    private final AllSalesData allSalesData;
 
     // Конструктор и инициализация данных
     private DataHandler() throws IOException, ClassNotFoundException {
         // Загрузка справочников товаров и категорий
         this.goodsByCategory = DataManagement.loadCategories();
-        this.salesByCategory = DataManagement.loadDataFromBinFile();
+        // Загрузка/Инициализация структур данных
+        this.allSalesData = DataManagement.loadAllDataFromBinFile();
     }
 
-    // Вместо конструктора
+    // Внешний "конструктор"
     public static DataHandler getInstance() throws IOException {
         return INSTANCE;
     }
@@ -45,34 +50,78 @@ public class DataHandler {
         var gson = new Gson();
         // Распихиваем строку JSON в JAVA объект
         var salesRecord = gson.fromJson(newSaleForAdd, SalesRecord.class);
-        // Категория, соответствующая товару
+        // Получаем категорию, соответствующая товару из МАПы
         var category = goodsByCategory.get(salesRecord.title);
         if (category == null) {
             category = "другое";
         }
-        // Плюсуем продажи
-        int currentSales = salesByCategory.getOrDefault(category, 0);
-        salesByCategory.put(category, currentSales + salesRecord.sum);
+        var date = salesRecord.date;
+        lastSaleDate = date;
+        var saleSum = salesRecord.sum;
+        // Плюсуем общие продажи (без учета даты)
+        int currentSales = allSalesData.maxCategory.getOrDefault(category, 0);
+        allSalesData.maxCategory.put(category, currentSales + saleSum);
+        // ----------------------------------------------
+        Map<String, Integer> localMap;
+        // Годовые продажи
+        var year = date.substring(0, 4);
+        localMap = allSalesData.yearlySales.getOrDefault(year, new HashMap<>());
+        currentSales = localMap.getOrDefault(category, 0);
+        localMap.put(category, currentSales + saleSum);
+        allSalesData.yearlySales.put(year, localMap);
+        // Месячные продажи
+        var month = date.substring(0, 7);
+        localMap = allSalesData.monthlySales.getOrDefault(month, new HashMap<>());
+        currentSales = localMap.getOrDefault(category, 0);
+        localMap.put(category, currentSales + saleSum);
+        allSalesData.monthlySales.put(month, localMap);
+        // Дневные продажи
+        localMap = allSalesData.dailySales.getOrDefault(date, new HashMap<>());
+        currentSales = localMap.getOrDefault(category, 0);
+        localMap.put(category, currentSales + saleSum);
+        allSalesData.dailySales.put(date, localMap);
+
         // Сохраняем данные
-        DataManagement.saveDataToBinFile(salesByCategory);
+        DataManagement.saveAllDataToBinFile(allSalesData);
     }
 
     /**
      * @return Строка JSON {"maxCategory": {"category": "еда","sum": 350000}}
      */
     public String generateAnalysisResults() {
-        var gson = new Gson();
-        String key = getEntryWithMaximumSales();
-        var salesData = new SalesData(key, salesByCategory.get(key));
-        var result = new AnalysisResult(salesData);
+//        var gson = new Gson();
+
+        String key = getEntryWithMaximumSales(allSalesData.maxCategory);
+        var maxInCategory = new SalesData(key, allSalesData.maxCategory.get(key));
+        var result = new AllAnalysisResults();
+        result.maxCategory = maxInCategory;
+
+        Map<String, Integer> localMap;
+        // Годовые продажи
+        var year = lastSaleDate.substring(0, 4);
+        localMap = allSalesData.yearlySales.get(year);
+        key = getEntryWithMaximumSales(localMap);
+        result.maxYearCategory = new SalesData(key, localMap.get(key));
+        // Месячные продажи
+        var month = lastSaleDate.substring(0, 7);
+        localMap = allSalesData.monthlySales.get(month);
+        key = getEntryWithMaximumSales(localMap);
+        result.maxMonthCategory = new SalesData(key, localMap.get(key));
+        // Дневные продажи
+        var date = lastSaleDate;
+        localMap = allSalesData.dailySales.get(date);
+        key = getEntryWithMaximumSales(localMap);
+        result.maxDayCategory = new SalesData(key, localMap.get(key));
+
+        var gson = new GsonBuilder().setPrettyPrinting().create();
         return gson.toJson(result);
     }
 
-    //  Вернуть категорию с наибольшим объемом продаж
-    private String getEntryWithMaximumSales() {
+    //  Вернуть категорию с наибольшим объемом продаж в переданной МАПе
+    private String getEntryWithMaximumSales(Map<String, Integer> salesMap) {
         int maxSale = -1;
         String key = null;
-        for (Map.Entry<String, Integer> entryMap : salesByCategory.entrySet()) {
+        for (Map.Entry<String, Integer> entryMap : salesMap.entrySet()) {
             if (entryMap.getValue() > maxSale) {
                 key = entryMap.getKey();
                 maxSale = entryMap.getValue();
@@ -105,5 +154,24 @@ public class DataHandler {
             this.category = category;
             this.sum = sum;
         }
+    }
+    /**
+     * Ключами МАПов являются подстроки даты
+     * "YYYY"
+     * "YYYY.MM"
+     * "YYYY.MM.DD"
+     */
+    protected static class AllSalesData implements Serializable {
+        Map<String, Integer> maxCategory;
+        Map<String, Map<String, Integer>> yearlySales;
+        Map<String, Map<String, Integer>> monthlySales;
+        Map<String, Map<String, Integer>> dailySales;
+    }
+
+    private class AllAnalysisResults {
+        SalesData maxCategory;
+        SalesData maxYearCategory;
+        SalesData maxMonthCategory;
+        SalesData maxDayCategory;
     }
 }
