@@ -2,6 +2,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +34,16 @@ public class DataHandler {
         // Загрузка справочников товаров и категорий
         this.goodsByCategory = DataManagement.loadCategories();
         // Загрузка/Инициализация структур данных
-        this.allSalesData = DataManagement.loadAllDataFromBinFile();
+        if (DataManagement.existSavedData()) {
+//            this.allSalesData = DataManagement.loadAllDataFromBinFile();
+            this.allSalesData = (AllSalesData) DataManagement.loadAllDataFromBinFile();
+        } else {
+            this.allSalesData = new AllSalesData();
+            allSalesData.maxCategory = new HashMap<>();
+            allSalesData.yearlySales = new HashMap<>();
+            allSalesData.monthlySales = new HashMap<>();
+            allSalesData.dailySales = new HashMap<>();
+        }
     }
 
     // Внешний "конструктор"
@@ -138,13 +148,6 @@ public class DataHandler {
     }
 
     // Вспомогательные классы для вывода результатов в JSON
-    private class AnalysisResult {
-        SalesData maxCategory;
-
-        public AnalysisResult(SalesData salesData) {
-            this.maxCategory = salesData;
-        }
-    }
 
     private class SalesData {
         String category;
@@ -161,7 +164,9 @@ public class DataHandler {
      * "YYYY.MM"
      * "YYYY.MM.DD"
      */
-    protected static class AllSalesData implements Serializable {
+    private static class AllSalesData implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 3L;
         Map<String, Integer> maxCategory;
         Map<String, Map<String, Integer>> yearlySales;
         Map<String, Map<String, Integer>> monthlySales;

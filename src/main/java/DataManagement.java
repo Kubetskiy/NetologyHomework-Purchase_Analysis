@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class DataManagement {
+    private static final String DATA_FILE = "data.bin";
 
     /**
      * loadCategories() - формирование мапы категорий из файла categories.tsv
@@ -22,27 +23,29 @@ public class DataManagement {
         return goodsByCategory;
     }
 
-    public static void saveAllDataToBinFile(DataHandler.AllSalesData allSalesData) throws IOException {
-        File file = new File("data.bin");
+    //    public static void saveAllDataToBinFile(DataHandler.AllSalesData allSalesData) throws IOException {
+    public static void saveAllDataToBinFile(Object allSalesData) throws IOException {
+        File file = new File(DATA_FILE);
         try (var fos = new FileOutputStream(file);
              var oos = new ObjectOutputStream(fos)) {
             oos.writeObject(allSalesData);
         }
     }
-    // Загружаем или создаем структуру данных
-    public static DataHandler.AllSalesData loadAllDataFromBinFile() throws IOException, ClassNotFoundException {
-        File file = new File("data.bin");
-        if (file.exists()) {
-            try (var fis = new FileInputStream(file);
-                 var ois = new ObjectInputStream(fis)) {
-                return (DataHandler.AllSalesData) ois.readObject();
-            }
+
+    // Загружаем структуру данных
+//    public static DataHandler.AllSalesData loadAllDataFromBinFile() throws IOException, ClassNotFoundException {
+    public static Object loadAllDataFromBinFile() throws IOException, ClassNotFoundException {
+        File file = new File(DATA_FILE);
+        try (var fis = new FileInputStream(file);
+             var ois = new ObjectInputStream(fis)) {
+//                return (DataHandler.AllSalesData) ois.readObject();
+            return ois.readObject();
         }
-        DataHandler.AllSalesData data = new DataHandler.AllSalesData();
-        data.maxCategory = new HashMap<>();
-        data.yearlySales = new HashMap<>();
-        data.monthlySales = new HashMap<>();
-        data.dailySales = new HashMap<>();
-        return data;
+    }
+
+    // Проверка наличия сохраненных данных
+    public static boolean existSavedData() {
+        File file = new File(DATA_FILE);
+        return file.exists();
     }
 }
