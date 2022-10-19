@@ -16,8 +16,12 @@ public class SocketRunner {
             var scanner = new Scanner(System.in);
             var request = scanner.nextLine();
             out.println(request);
-            String response = in.lines().collect(Collectors.joining());
-            System.out.println("From server: " + response);
+//            String response = in.lines().collect(Collectors.joining());
+//            System.out.println("From server: " + response);
+            for (String response = in.readLine(); response != null;) {
+                System.out.println(response);
+                response = in.readLine();
+            }
         }
     }
 }

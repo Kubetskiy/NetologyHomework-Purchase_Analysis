@@ -148,7 +148,6 @@ public class DataHandler {
     }
 
     // Вспомогательные классы для вывода результатов в JSON
-
     private class SalesData {
         String category;
         int sum;
@@ -159,9 +158,9 @@ public class DataHandler {
         }
     }
     /**
-     * Ключами МАПов являются подстроки даты
-     * "YYYY"
-     * "YYYY.MM"
+     * Ключами МАПов являются подстроки даты<br>
+     * "YYYY"<br>
+     * "YYYY.MM"<br>
      * "YYYY.MM.DD"
      */
     private static class AllSalesData implements Serializable {
