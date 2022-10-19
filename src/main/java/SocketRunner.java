@@ -1,9 +1,8 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Inet4Address;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 
 public class SocketRunner {
@@ -11,16 +10,16 @@ public class SocketRunner {
 
         var inetAddress = Inet4Address.getByName("localhost");
 
-//        while (true) {
-            System.out.println(" ");
-            try (var socket = new Socket(inetAddress, 8989);
-                 var outputStream = new DataOutputStream(socket.getOutputStream());
-                 var inputStream = new DataInputStream(socket.getInputStream());
-                 var scanner = new Scanner(System.in)) {
-                var request = scanner.nextLine();
-                outputStream.writeUTF(request);
-                System.out.println("From server: " + inputStream.readUTF());
-            }
-//        }
+        try (var socket = new Socket(inetAddress, 8989);
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+            var scanner = new Scanner(System.in);
+            var request = scanner.nextLine();
+            out.println(request);
+//            out.flush();
+//            out.close();
+            String response = in.lines().collect(Collectors.joining());
+            System.out.println("From server: " + response);
+        }
     }
 }

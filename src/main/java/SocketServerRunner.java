@@ -1,6 +1,4 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 
 public class SocketServerRunner implements Runnable {
@@ -10,17 +8,16 @@ public class SocketServerRunner implements Runnable {
             while (true) {
                 try (
                         var socket = serverSocket.accept();
-                        var outputStream = new DataOutputStream(socket.getOutputStream());
-                        var inputStream = new DataInputStream(socket.getInputStream());
-                ) {
+                        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                        PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
                     String response;
                     // Принимаем запрос
-                    var request = inputStream.readUTF(); // {"title": "булка", "date": "2022.02.08", "sum": 200}
+                    var request = in.readLine(); // {"title": "булка", "date": "2022.02.08", "sum": 200}
                     // Отправляем на обработку
                     DataHandler.getInstance().addSale(request);
                     // Запрашиваем результат и отправляем его клиенту
                     response = DataHandler.getInstance().generateAnalysisResults();
-                    outputStream.writeUTF(response);
+                    out.println(response);
                 }
             }
         } catch (IOException e) {
