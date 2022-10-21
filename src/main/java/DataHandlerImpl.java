@@ -82,6 +82,7 @@ public class DataHandlerImpl  implements DataHandler {
         var date = salesRecord.date;
         lastSaleDate = date;
         var saleSum = salesRecord.sum;
+
         // Плюсуем общие продажи (без учета даты)
         int currentSales = allSalesData.maxCategory.getOrDefault(category, 0);
         allSalesData.maxCategory.put(category, currentSales + saleSum);
