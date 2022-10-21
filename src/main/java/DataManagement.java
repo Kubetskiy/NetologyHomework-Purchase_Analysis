@@ -23,7 +23,7 @@ public class DataManagement {
         return goodsByCategory;
     }
 
-    //    public static void saveAllDataToBinFile(DataHandler.AllSalesData allSalesData) throws IOException {
+    //
     public static void saveAllDataToBinFile(Object allSalesData) throws IOException {
         File file = new File(DATA_FILE);
         try (var fos = new FileOutputStream(file);
@@ -33,12 +33,10 @@ public class DataManagement {
     }
 
     // Загружаем структуру данных
-//    public static DataHandler.AllSalesData loadAllDataFromBinFile() throws IOException, ClassNotFoundException {
     public static Object loadAllDataFromBinFile() throws IOException, ClassNotFoundException {
         File file = new File(DATA_FILE);
         try (var fis = new FileInputStream(file);
              var ois = new ObjectInputStream(fis)) {
-//                return (DataHandler.AllSalesData) ois.readObject();
             return ois.readObject();
         }
     }
