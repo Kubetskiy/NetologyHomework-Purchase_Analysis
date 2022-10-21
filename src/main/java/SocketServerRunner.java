@@ -22,7 +22,7 @@ public class SocketServerRunner implements Runnable {
                     out.println(response);
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             System.out.println("Не могу стартовать сервер");
             e.printStackTrace();
         }

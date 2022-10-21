@@ -20,13 +20,14 @@ public class DataHandlerImpl  implements DataHandler {
 
     // Запрет на загрузку/сохранение данных, в интерфейсе не описан
     // For using with Unit tests ONLY
-    public void setLoadAndSaveDataDisabled() {
+    public static void setLoadAndSaveDataDisabled() {
         LOAD_DATA = false;
         SAVE_DATA = false;
     }
 
-    private static final DataHandlerImpl INSTANCE;
+    private static DataHandlerImpl INSTANCE;
 
+/*
     static {
         try {
             INSTANCE = new DataHandlerImpl();
@@ -34,9 +35,13 @@ public class DataHandlerImpl  implements DataHandler {
             throw new RuntimeException(e);
         }
     }
+*/
 
     // Внешний "конструктор"
-    public static DataHandlerImpl getInstance() throws IOException {
+    public static DataHandlerImpl getInstance() throws IOException, ClassNotFoundException {
+        if (INSTANCE == null) {
+            INSTANCE = new DataHandlerImpl();
+        }
         return INSTANCE;
     }
 
