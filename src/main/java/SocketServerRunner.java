@@ -5,6 +5,8 @@ public class SocketServerRunner implements Runnable {
     @Override
     public void run() {
         try (var serverSocket = new ServerSocket(8989)) {
+            DataHandler dh = DataHandlerImpl.getInstance();
+
             while (true) {
                 try (
                         var socket = serverSocket.accept();
@@ -14,9 +16,9 @@ public class SocketServerRunner implements Runnable {
                     // Принимаем запрос
                     var request = in.readLine(); // {"title": "булка", "date": "2022.02.08", "sum": 200}
                     // Отправляем на обработку
-                    DataHandler.getInstance().addSale(request);
+                    dh.addSale(request);
                     // Запрашиваем результат и отправляем его клиенту
-                    response = DataHandler.getInstance().generateAnalysisResults();
+                    response = dh.generateAnalysisResults();
                     out.println(response);
                 }
             }
