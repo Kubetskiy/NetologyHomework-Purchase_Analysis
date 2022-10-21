@@ -6,11 +6,11 @@ import java.io.IOException;
 class DataHandlerImplTest {
 
     @Test
-    void responsesToQueriesShouldMeetExpectations() throws IOException {
+    void responsesToQueriesShouldMeetExpectations() throws IOException, ClassNotFoundException {
 
-        DataHandlerImpl dh = DataHandlerImpl.getInstance();
         // Запрещаем действия с файлом данных
-        dh.setLoadAndSaveDataDisabled();
+        DataHandlerImpl.setLoadAndSaveDataDisabled();
+        DataHandler dh = DataHandlerImpl.getInstance();
 
         // {"maxCategory":{"category": "другое","sum": 333}}
         String s1 = "{\"title\": \"рулька\", \"date\": \"2022.02.08\", \"sum\": 333}";
