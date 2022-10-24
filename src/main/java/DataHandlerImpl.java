@@ -2,17 +2,17 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
-import java.io.Serial;
+//import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Класс должен объявляться через интерфейс
- * Данная реализация использует явную автоматическую инициализацию МАПы продукт - категория
- * путем вызова процедуры загрузки МАПы в конструкторе.
+ Класс должен объявляться через интерфейс
+ Данная реализация использует явную автоматическую инициализацию МАПы продукт - категория
+ путем вызова процедуры загрузки МАПы в конструкторе.
  */
-public class DataHandlerImpl  implements DataHandler {
+public class DataHandlerImpl implements DataHandler {
 
     // По условиям задания загрузка/сохранения всегда осуществляются
     private static boolean LOAD_DATA = true;
@@ -26,16 +26,6 @@ public class DataHandlerImpl  implements DataHandler {
     }
 
     private static DataHandlerImpl INSTANCE;
-
-/*
-    static {
-        try {
-            INSTANCE = new DataHandlerImpl();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-*/
 
     // Внешний "конструктор"
     public static DataHandlerImpl getInstance() throws IOException, ClassNotFoundException {
@@ -70,45 +60,47 @@ public class DataHandlerImpl  implements DataHandler {
     }
 
     /**
-     * Получаем запись о продаже и добавляем к данным
-     *
-     * @param newSaleForAdd Строка JSON ({"title": "булка", "date": "2022.02.08", "sum": 200})
+     Получаем запись о продаже и добавляем к данным
+
+     @param newSaleForAdd Строка JSON ({"title": "булка", "date": "2022.02.08", "sum": 200})
      */
     @Override
     public void addSale(String newSaleForAdd) throws IOException {
-        var gson = new Gson();
         // Распихиваем строку JSON в JAVA объект
-        var salesRecord = gson.fromJson(newSaleForAdd, SalesRecord.class);
-        // Получаем категорию, соответствующая товару из МАПы
-        var category = goodsByCategory.get(salesRecord.title);
-        if (category == null) {
-            category = "другое";
-        }
-        var date = salesRecord.date;
-        lastSaleDate = date;
-        var saleSum = salesRecord.sum;
+        CategorySalesData categorySalesData = salesRecordConversion(newSaleForAdd);
 
+        var category = categorySalesData.category;
+        var date = categorySalesData.date;
+        var saleSum = categorySalesData.sum;
+        // Сохраним дату текущей транзакции в поле класса
+        lastSaleDate = date;
         // Плюсуем общие продажи (без учета даты)
         int currentSales = allSalesData.maxCategory.getOrDefault(category, 0);
-        allSalesData.maxCategory.put(category, currentSales + saleSum);
+        allSalesData.maxCategory.put(category, currentSales + categorySalesData.sum);
         // ----------------------------------------------
         Map<String, Integer> localMap;
         // Годовые продажи
         var year = date.substring(0, 4);
         localMap = allSalesData.yearlySales.getOrDefault(year, new HashMap<>());
+
         currentSales = localMap.getOrDefault(category, 0);
         localMap.put(category, currentSales + saleSum);
+
         allSalesData.yearlySales.put(year, localMap);
         // Месячные продажи
         var month = date.substring(0, 7);
         localMap = allSalesData.monthlySales.getOrDefault(month, new HashMap<>());
+
         currentSales = localMap.getOrDefault(category, 0);
         localMap.put(category, currentSales + saleSum);
+
         allSalesData.monthlySales.put(month, localMap);
         // Дневные продажи
         localMap = allSalesData.dailySales.getOrDefault(date, new HashMap<>());
+
         currentSales = localMap.getOrDefault(category, 0);
         localMap.put(category, currentSales + saleSum);
+
         allSalesData.dailySales.put(date, localMap);
 
         // Сохраняем данные
@@ -118,39 +110,62 @@ public class DataHandlerImpl  implements DataHandler {
     }
 
     /**
-     * @return Строка JSON {"maxCategory": {"category": "еда","sum": 350000}}
+     Получаем запись (объект) о продаже после JSON
+     Отдаем объект с преобразованием названия товара в категорию
+     */
+    private CategorySalesData salesRecordConversion(String saleRecordJSON) {
+        var gson = new Gson();
+        var salesRecord = gson.fromJson(saleRecordJSON, SalesRecordFromJSON.class);
+
+        var saleCategory = goodsByCategory.get(salesRecord.title);
+        if (saleCategory == null) {saleCategory = "другое";}
+
+        var date = salesRecord.date;
+        var saleSum = salesRecord.sum;
+        return new CategorySalesData(saleCategory, date, saleSum);
+    }
+
+    /**
+     @return Строка JSON {"maxCategory": {"category": "еда","sum": 350000}}
      */
     @Override
     public String generateAnalysisResults() {
-//        var gson = new Gson();
 
         String key = getEntryWithMaximumSales(allSalesData.maxCategory);
-        var maxInCategory = new SalesData(key, allSalesData.maxCategory.get(key));
+        var maxInCategory = new SaleDataForOutput(key, allSalesData.maxCategory.get(key));
         var result = new AllAnalysisResults();
         result.maxCategory = maxInCategory;
 
         Map<String, Integer> localMap;
         // Годовые продажи
         var year = lastSaleDate.substring(0, 4);
+
         localMap = allSalesData.yearlySales.get(year);
         key = getEntryWithMaximumSales(localMap);
-        result.maxYearCategory = new SalesData(key, localMap.get(key));
+
+        result.maxYearCategory = new SaleDataForOutput(key, localMap.get(key));
         // Месячные продажи
         var month = lastSaleDate.substring(0, 7);
+
         localMap = allSalesData.monthlySales.get(month);
         key = getEntryWithMaximumSales(localMap);
-        result.maxMonthCategory = new SalesData(key, localMap.get(key));
+
+        result.maxMonthCategory = new SaleDataForOutput(key, localMap.get(key));
         // Дневные продажи
         var date = lastSaleDate;
+
         localMap = allSalesData.dailySales.get(date);
         key = getEntryWithMaximumSales(localMap);
-        result.maxDayCategory = new SalesData(key, localMap.get(key));
 
+        result.maxDayCategory = new SaleDataForOutput(key, localMap.get(key));
+        // Запихнули в JSON и отдали
         var gson = new GsonBuilder().setPrettyPrinting().create();
         return gson.toJson(result);
     }
 
-    //  Вернуть категорию с наибольшим объемом продаж в переданной МАПе
+    /**
+     Вернуть категорию с наибольшим объемом продаж в переданной МАПе
+     */
     private String getEntryWithMaximumSales(Map<String, Integer> salesMap) {
         int maxSale = -1;
         String key = null;
@@ -163,43 +178,62 @@ public class DataHandlerImpl  implements DataHandler {
         return key;
     }
 
-    // Вспомогательный класс для получения записей о продажах
-    private class SalesRecord {
+    /**
+     Вспомогательный класс для получения записей о продажах
+     */
+    private class SalesRecordFromJSON {
         String title;
         String date;
         int sum;
     }
 
-    // Вспомогательные классы для вывода результатов в JSON
-    private class SalesData {
+    /**
+     Вспомогательные класс запись о продаже с подставленной вместо товара категорией
+     */
+    private class CategorySalesData {
         String category;
+        String date;
         int sum;
 
-        public SalesData(String category, int sum) {
+        public CategorySalesData(String category, String date, int sum) {
             this.category = category;
+            this.date = date;
             this.sum = sum;
         }
     }
 
     /**
-     * Ключами МАПов являются подстроки даты<br>
-     * "YYYY"<br>
-     * "YYYY.MM"<br>
-     * "YYYY.MM.DD"
+     Ключами МАПов являются подстроки даты<br>
+     "YYYY"<br>
+     "YYYY.MM"<br>
+     "YYYY.MM.DD"
      */
     private static class AllSalesData implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 3L;
+//        @Serial
+//        private static final long serialVersionUID = 3L;
         Map<String, Integer> maxCategory;
         Map<String, Map<String, Integer>> yearlySales;
         Map<String, Map<String, Integer>> monthlySales;
         Map<String, Map<String, Integer>> dailySales;
     }
 
+    /**
+     Вспомогательные классы для вывода результата аналитики
+     */
     private class AllAnalysisResults {
-        SalesData maxCategory;
-        SalesData maxYearCategory;
-        SalesData maxMonthCategory;
-        SalesData maxDayCategory;
+        SaleDataForOutput maxCategory;
+        SaleDataForOutput maxYearCategory;
+        SaleDataForOutput maxMonthCategory;
+        SaleDataForOutput maxDayCategory;
+    }
+
+    private class SaleDataForOutput {
+        String category;
+        int sum;
+
+        public SaleDataForOutput(String category, int sum) {
+            this.category = category;
+            this.sum = sum;
+        }
     }
 }
